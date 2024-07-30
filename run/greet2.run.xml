@@ -2,7 +2,7 @@
   <configuration default="false" name="greet2" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="go-continuous-delivery-workshop" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="-commit 292e275cacf0238ec0e3d76e8c4948a02c051fc7 -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart" />
+    <parameters value="-commit 292e275cacf0238ec0e3d76e8c4948a02c051fc7 -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart -repo-url &quot;https://github.com/mtumilowicz/helm-workshop&quot;" />
     <kind value="PACKAGE" />
     <package value="go-continuous-delivery-workshop" />
     <directory value="$PROJECT_DIR$" />

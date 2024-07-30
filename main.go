@@ -12,6 +12,7 @@ func main() {
 	commitHash := flag.String("commit", "", "Git commit hash (required)")
 	imageName := flag.String("image-name", "", "Name of the Docker image (required)")
 	releaseName := flag.String("release-name", "", "Name of the Helm release (required)")
+	repoURL := flag.String("repo-url", "", "URL of the Git repository (required)")
 	chartDir := flag.String("chart-dir", "./helm", "Path to Helm chart directory")
 	namespace := flag.String("namespace", "default", "Kubernetes namespace")
 	flag.Parse()
@@ -32,14 +33,18 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+	if *repoURL == "" {
+		fmt.Println("Repository url is required.")
+		flag.Usage()
+		os.Exit(1)
+	}
 
-	// Set repository URL and clone directory
-	repoURL := "https://github.com/mtumilowicz/helm-workshop"
-	cloneDir := "./helm-workshop"
+	// Set clone directory based on image name
+	cloneDir := "./" + *imageName
 
 	// Clone the repository
 	fmt.Printf("Cloning repository from %s...\n", repoURL)
-	err := cloneRepository(repoURL, cloneDir)
+	err := cloneRepository(*repoURL, cloneDir)
 	if err != nil {
 		fmt.Printf("Error cloning repository: %v\n", err)
 		os.Exit(1)
