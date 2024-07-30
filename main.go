@@ -7,18 +7,30 @@ import (
 	"os/exec"
 )
 
+// -commit f7849357b169da3d0f446b2717a3eef644159fdd -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart
+// -commit 292e275cacf0238ec0e3d76e8c4948a02c051fc7 -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart
 func main() {
 	// Parse command-line arguments
-	//commitHash := flag.String("commit", "292e275cacf0238ec0e3d76e8c4948a02c051fc7", "Git commit hash")
-	commitHash := flag.String("commit", "f7849357b169da3d0f446b2717a3eef644159fdd", "Git commit hash")
+	commitHash := flag.String("commit", "", "Git commit hash (required)")
 	chartDir := flag.String("chart-dir", "./helm", "Path to Helm chart directory")
-	imageName := flag.String("image-name", "helm-workshop", "Name of the Docker image")
+	imageName := flag.String("image-name", "", "Name of the Docker image (required)")
 	namespace := flag.String("namespace", "default", "Kubernetes namespace")
-	releaseName := flag.String("release-name", "helmworkshopchart", "Name of the Helm release")
+	releaseName := flag.String("release-name", "", "Name of the Helm release (required)")
 	flag.Parse()
 
+	// Validate required flags
 	if *commitHash == "" {
 		fmt.Println("Commit hash is required.")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *imageName == "" {
+		fmt.Println("Image name is required.")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *releaseName == "" {
+		fmt.Println("Release name is required.")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -27,23 +39,11 @@ func main() {
 	repoURL := "https://github.com/mtumilowicz/helm-workshop"
 	cloneDir := "./helm-workshop"
 
-	// Clone the repository if it doesn't exist
-	if _, err := os.Stat(cloneDir); os.IsNotExist(err) {
-		fmt.Printf("Cloning repository from %s...\n", repoURL)
-		err := cloneRepository(repoURL, cloneDir)
-		if err != nil {
-			fmt.Printf("Error cloning repository: %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		fmt.Printf("Repository already exists at %s, skipping clone.\n", cloneDir)
-	}
-
-	// Clean repository and checkout the specific commit
-	fmt.Printf("Cleaning repository...\n")
-	err := cleanRepository(cloneDir)
+	// Clone the repository
+	fmt.Printf("Cloning repository from %s...\n", repoURL)
+	err := cloneRepository(repoURL, cloneDir)
 	if err != nil {
-		fmt.Printf("Error cleaning repository: %v\n", err)
+		fmt.Printf("Error cloning repository: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -84,22 +84,6 @@ func main() {
 // cloneRepository clones the Git repository to the specified directory.
 func cloneRepository(repoURL, cloneDir string) error {
 	cmd := exec.Command("git", "clone", repoURL, cloneDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-// cleanRepository ensures that the git repository is in a clean state.
-func cleanRepository(cloneDir string) error {
-	cmd := exec.Command("git", "reset", "--hard")
-	cmd.Dir = cloneDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	cmd = exec.Command("git", "clean", "-fd")
-	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
