@@ -7,15 +7,13 @@ import (
 	"os/exec"
 )
 
-// -commit f7849357b169da3d0f446b2717a3eef644159fdd -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart
-// -commit 292e275cacf0238ec0e3d76e8c4948a02c051fc7 -chart-dir ./helm -image-name helm-workshop -namespace default -release-name helmworkshopchart
 func main() {
 	// Parse command-line arguments
 	commitHash := flag.String("commit", "", "Git commit hash (required)")
-	chartDir := flag.String("chart-dir", "./helm", "Path to Helm chart directory")
 	imageName := flag.String("image-name", "", "Name of the Docker image (required)")
-	namespace := flag.String("namespace", "default", "Kubernetes namespace")
 	releaseName := flag.String("release-name", "", "Name of the Helm release (required)")
+	chartDir := flag.String("chart-dir", "./helm", "Path to Helm chart directory")
+	namespace := flag.String("namespace", "default", "Kubernetes namespace")
 	flag.Parse()
 
 	// Validate required flags
