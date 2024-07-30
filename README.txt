@@ -6,9 +6,17 @@
     * [WJUG #181 - Continuous Delivery: architektura i praktyka - Łukasz Szydło](https://www.youtube.com/watch?v=kTX45JGCRYU)
     * [GOTO 2019 • Modern Continuous Delivery • Ken Mugrage](https://www.youtube.com/watch?v=wjF4X9t3FMk)
     * https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment
+    * https://www.linkedin.com/pulse/new-cloud-norm-finsecdevops-joe-frixon-/
+    * [Database Migration with Spring Boot – Pitfalls and Hidden Surprises By Dmitry Belyaev](https://www.youtube.com/watch?v=WuIgPPfgQUU)
+    * [Nicolas Frankel - Zero-downtime deployment with Kubernetes, Spring Boot and Flyway](https://www.youtube.com/watch?v=RvCnrBZ0DPY)
+    * [Continuous deployment to Kubernetes with the Google Container Tools by David Gageot](https://www.youtube.com/watch?v=3nfNP00Tv1k)
+    * [Canary Deploys with Kubernetes and Istio by Jason Yee](https://www.youtube.com/watch?v=VU2ILSrpy_Y)
+    * [2018 - Mateusz Dymiński - Zero-Downtime deployments of Java applications with Kubernetes](https://www.youtube.com/watch?v=TVB-sQfJBLc)
+    * [Develop and Deploy to Kubernetes like a Googler by David Gageot](https://www.youtube.com/watch?v=YYJ4RZFw4j8)
+    * [Better Canary Deploys with Kubernetes and Istio by Jason Yee](https://www.youtube.com/watch?v=R7gUDY_-cFo)
+    * [Optimising Kubernetes deployments with Helm by Erwin de Gier](https://www.youtube.com/watch?v=TXZBuBQpm-Q)
 
 ## preface
-
 * goals of this workshop
     * general understanding
 * workshop plan
@@ -37,15 +45,20 @@
 * continuous integration
     * team members integrate their work frequently
     * commits are verified by automated build and tests
+    * pros: avoid integration challenges that can happen when waiting for release day to merge changes
 * continuous delivery
+    * automated release process on top of automated testing
+        * deploy = clicking a button
     * building and testing software in such a way that the software can
     be released to production at any time
-    * "ship early, ship often, sacrificing features, never quality" kule neath
-    * for some, "continuously" means once a day, for others once a week, and for others once a month
+    * "ship early, ship often, sacrificing features, never quality" Kule Neath
+    * you can decide to release daily, weekly, fortnightly, or whatever suits your business requirements
         * there is no single definition of "continuously"
     * not all applications are suitable for this approach
         * example: highly regulated applications (medical software)
 * continuous deployment
+    * vs continuous delivery
+        ![alt text](img/deployment-vs-delivery.png)
     * every change goes through the build/test pipeline and automatically gets
     put into production
     * clue is not to have multiple releases per day, but to have multiple deployments
@@ -60,6 +73,8 @@
     * development and operations engineers being responsible together
     for the entire product lifecycle
     * usually it is ops team renamed for devops team
+    * FinSecDevOps
+        * Finance, Security and Development
 
 ## feature toggle
 * branching
@@ -82,13 +97,31 @@
             * infrastructure for quickly handling errors
                 * disable the feature with a toggle, and do quick fix
 
+## db migrations
+* problem
+  * long running data migration causes liveness probe to fail what causes multiple restarts of a container and a failed
+  deployment
+  * solution
+    * treat db migration as a long running process
+      * use dedicated k8s process
+    * separate db migration from service startup
+* separate schema changes from data migration and run them in individual transactions
+* make schema changes idempotent
+* make schema changes backward compatible
+  * follow up migration to clean things up
+* deployments
+    * blue-green deployment
+    * rolling update
+        * canary deploy
+
 ## bugs
 * functional bugs
     * user can't complete some action
-        * nie jest poważny
-    * user can complete action wrong (najpierw ustrzegać się przed tymi błędami)
-        * jest poważny, miało kosztować 200 zł a naliczyło 100
-        * data corruption
+        * not serious
+    * user can complete action wrong
+        * serious
+        * usually leads to data corruption
+        * example: something should cost 200 USD but costed 100
 
 
 ## script description
