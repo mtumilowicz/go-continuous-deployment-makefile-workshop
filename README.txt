@@ -18,6 +18,7 @@
     * https://www.optimizely.com/optimization-glossary/feature-toggle/
     * https://www.kameleoon.com/blog/feature-toggles-vs-feature-flags-all-you-need-know
     * https://docs.getunleash.io/topics/feature-flags/feature-flag-best-practices
+    * https://launchdarkly.com/blog/is-it-a-feature-flag-or-a-feature-toggle/
 
 ## preface
 * goals of this workshop
@@ -79,7 +80,7 @@
     * FinSecDevOps
         * Finance, Security and Development
 
-## feature toggle
+## feature flag
 * is a mechanism that allows code to be turned "on" or "off" remotely without the need for a deploy
     * during runtime, your system will query an outside data source or a service to read the configuration
     * example
@@ -94,6 +95,7 @@
         }
         ```
 * also known as "feature flags", "feature switches", or "release toggles"
+* separates feature rollout from code deployment
 * has a lifecycle shorter than an application lifecycle
     * most common use case: protect new functionality
     * roll-out of new functionality is complete => the feature flag should be removed
