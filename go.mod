@@ -1,3 +1,3 @@
-module go-continuous-delivery-workshop
+module go-continuous-deployment-workshop
 
 go 1.22
