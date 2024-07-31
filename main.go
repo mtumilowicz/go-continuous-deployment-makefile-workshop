@@ -50,6 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Checkout commit
 	fmt.Printf("Checking out commit: %s\n", *commitHash)
 	err = checkoutCommit(*commitHash, cloneDir)
 	if err != nil {
@@ -62,6 +63,14 @@ func main() {
 	err = cleanBuild(cloneDir)
 	if err != nil {
 		fmt.Printf("Error cleaning build artifacts: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Run tests
+	fmt.Printf("Running tests...\n")
+	err = runTests(cloneDir)
+	if err != nil {
+		fmt.Printf("Error running tests: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -95,6 +104,15 @@ func cloneRepository(repoURL, cloneDir string) error {
 // checkoutCommit checks out the specified commit hash in the working directory.
 func checkoutCommit(commitHash, cloneDir string) error {
 	cmd := exec.Command("git", "checkout", commitHash)
+	cmd.Dir = cloneDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// runTests runs the tests using Gradle in the working directory.
+func runTests(cloneDir string) error {
+	cmd := exec.Command("./gradlew", "test")
 	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
