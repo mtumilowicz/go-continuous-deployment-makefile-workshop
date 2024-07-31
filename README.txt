@@ -15,6 +15,9 @@
     * [Develop and Deploy to Kubernetes like a Googler by David Gageot](https://www.youtube.com/watch?v=YYJ4RZFw4j8)
     * [Better Canary Deploys with Kubernetes and Istio by Jason Yee](https://www.youtube.com/watch?v=R7gUDY_-cFo)
     * [Optimising Kubernetes deployments with Helm by Erwin de Gier](https://www.youtube.com/watch?v=TXZBuBQpm-Q)
+    * https://www.optimizely.com/optimization-glossary/feature-toggle/
+    * https://www.kameleoon.com/blog/feature-toggles-vs-feature-flags-all-you-need-know
+    * https://docs.getunleash.io/topics/feature-flags/feature-flag-best-practices
 
 ## preface
 * goals of this workshop
@@ -77,6 +80,98 @@
         * Finance, Security and Development
 
 ## feature toggle
+* is a mechanism that allows code to be turned "on" or "off" remotely without the need for a deploy
+    * during runtime, your system will query an outside data source or a service to read the configuration
+    * example
+        ```
+        @GetMapping("/feature-status")
+        public String getFeatureStatus() {
+            if (featureToggleService.isFeatureEnabled("your-feature-toggle-name")) {
+                return "Feature is enabled!";
+            } else {
+                return "Feature is disabled!";
+            }
+        }
+        ```
+* also known as "feature flags", "feature switches", or "release toggles"
+* has a lifecycle shorter than an application lifecycle
+    * most common use case: protect new functionality
+    * roll-out of new functionality is complete => the feature flag should be removed
+    * should have expiration dates
+        * makes it easier to keep track of old feature flags
+    * valid exceptions
+        * kill-switches
+            * used to gracefully disable part of a system with known weak spots
+        * internal flags
+            * used to enable additional debugging, tracing, and metrics at runtime
+                * too costly to run all the time
+* pros
+    * mitigates the risks associated with releasing changes
+    * testing changes on small subsets of users
+        * example: canary releases
+    * enable rapid deployment and rollbacks of new code
+        * code changes can be made to the the main trunk instead of having multiple feature branches
+            * trunk based development process
+* providers: LaunchDarkly, Unleash
+* large-scale feature flag system components
+    * Feature Flag Control Service
+        * centralized feature flag service that acts as the control plane
+        * independent business units or product lines should potentially have their own instances
+            * contextual decision based on organization
+        * keep the management of the flags as simple as possible
+            * avoid the complexity of cross-instance synchronization of feature flag configuration
+    * Database or Data Store
+        * storing feature flag configurations
+    * API Layer
+        * allow your application to request feature flag configurations
+    * Feature Flag SDK
+        * easy-to-use interface for fetching flag configurations and evaluating feature flags at runtime
+        * query the local cache and ask the central service for updates in the background
+        * continuously updated
+            * should handle subscriptions or polling to the feature flag service for updates
+* principles
+    1. enable run-time control
+        * control flags dynamically, not using config files
+        * if you need to restart your application to turn on a flag => you are using configuration, not feature flags
+    1. never expose PII
+        * Personally Identifiable Information (PII)
+        * Feature Flag Control Service should only handle the configuration and pass this configuration down to SDKs
+            * rationale: feature flags often require contextual data for accurate evaluation
+                * example: user IDs, email addresses, or geographical locations
+            * example
+                ```
+                UnleashContext context = UnleashContext.builder()
+                        .userId(userId)
+                        .build();
+                return unleash.isEnabled(featureName, context);
+                ```
+                and Feature Flag Control Service configuration
+                ```
+                Feature Toggle Name: your-feature-toggle-name
+                Strategy: UserWithId
+                Parameters:
+                    User IDs: user1,user2,user3
+                ```
+        * allows offline functionality
+        * reduces bandwidth costs
+            * local evaluation reduces the amount of data transferred between your application and the feature flag service
+    1. evaluate flags as close to the user as possible
+        * reduces latency
+        * evaluation should always happen server side
+    1. decouple reading and writing flags
+        * horizontally scale out the read APIs without scaling the write APIs
+    1. feature flag payload should be as small as possible
+        * problem: feature flag based on individual user IDs
+            * categorize these users into logical groupings
+    1. favor availability over consistency
+        * feature flag system should not be able to take down your main application under any circumstance
+        * application's availability should have zero dependencies on the availability of feature flag system
+    1. do not confuse flags with application configuration
+        * plan to clean up old feature branches
+    1. treat feature flags like technical debt
+    1. use unique names across all applications
+        * enforce naming conventions
+        * prevents the reuse of old flag names to protect new features (zombies)
 * branching
     * branch per feature
         * cons: usually big and messy changes, often chaotic
@@ -125,3 +220,5 @@
 
 
 ## script description
+
+## argoCD
