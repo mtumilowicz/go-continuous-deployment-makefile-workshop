@@ -19,6 +19,10 @@
     * https://www.kameleoon.com/blog/feature-toggles-vs-feature-flags-all-you-need-know
     * https://docs.getunleash.io/topics/feature-flags/feature-flag-best-practices
     * https://launchdarkly.com/blog/is-it-a-feature-flag-or-a-feature-toggle/
+    * https://www.exoscale.com/syslog/kubernetes-zero-downtime-deployment/
+    * https://www.exoscale.com/syslog/kubernetes-zero-downtime-with-spring-boot/
+    * https://andrewlock.net/deploying-asp-net-core-applications-to-kubernetes-part-8-running-database-migrations-using-jobs-and-init-containers/
+    * https://argo-cd.readthedocs.io/en/stable/
 
 ## preface
 * goals of this workshop
@@ -195,11 +199,40 @@
                 * disable the feature with a toggle, and do quick fix
 
 ## db migrations
+* zero-downtime
+    * oldest ideas to achieve a zero downtime update is the Blue-Green deployment
+        * two exactly similar environments, one referenced as Green, the other as Blue
+        * one of them runs the production app, while the other runs the pre-production app
+        * in front of them sits a dispatcher
+            * routes requests to the relevant environment: production or pre-production
+            * you deploy update to the pre-production environment, test it, and switch the dispatcher
+        * migration can take time and can block users in-between environments pending migration
+            * not always doable before switch => production data is constantly changing
+        * maybe environments should share same database => schema changes must be compatible with the old app version
+    * rolling update
+        * schema changes must be backward compatible and forward compatible
+            * deployment cannot be rolled back, since the legacy application is not able to cope with the updated schema
+            * schema change cannot obviously be both
+                * split the schema update into a series of small side-by-side compatible schema updates
+                * application needs to be updated in increments
+                    * able to cope with the current schema update and the next one
 * problem
   * long running data migration causes liveness probe to fail what causes multiple restarts of a container and a failed
   deployment
-  * solution
-    * treat db migration as a long running process
+  * solutions
+    1. k8s probles
+        * startupProbe
+            * prevent premature pod restarts due to long initialization processes
+                * Once the startupProbe succeeds, the readinessProbe and livenessProbe are activated
+            * used for application or its dependencies (e.g., databases, migrations) take a significant amount of time to start
+        * readinessProbe
+            * determine if the application is ready to handle traffic
+            * prevent routing traffic to pods that are still initializing or are not ready
+            * If it fails, the pod is removed from the list of active service endpoints but is not restarted.
+        * livenessProbe
+            * ensures the pod is alive and running
+            * If it fails, the pod is restarted by Kubernetes.
+    1. treat db migration as a long running process
       * use dedicated k8s process
     * separate db migration from service startup
 * separate schema changes from data migration and run them in individual transactions
@@ -210,6 +243,10 @@
     * blue-green deployment
     * rolling update
         * canary deploy
+* Running database migrations using jobs and init containers
+    * Init containers are a special type of container in a pod. When Kubernetes deploys a pod, it runs all the init containers first.
+    * Only once all of those containers have exited gracefully will the main containers be executed.
+    * Init containers are often used for downloading or configuring pre-requisites required by the main container.
 
 ## bugs
 * functional bugs
@@ -224,3 +261,11 @@
 ## script description
 
 ## argoCD
+* follows the GitOps pattern of using Git repositories as the source of truth for defining the desired application state
+* is implemented as a Kubernetes controller which continuously monitors running applications and compares the current, live state against the desired target state (as specified in the Git repo)
+* Argo CD acts as the application controller that continuously checks between the Git repository and the applications for parameters defined by the cluster admin
+
+## k8s
+* Can be either Recreate or RollingUpdate. In the first case, Kubernetes will terminate all the Pods, and then proceed to start the updated ones. This is great for a development environment, but doesn’t implement zero-downtime. Alternatively, the value RollingUpdate configures Kubernetes to use the maxSurge and maxUnavailable parameter values.
+* Deploy by adding a Pod, then remove an old one
+* Deploy by removing a Pod, then add a new one
