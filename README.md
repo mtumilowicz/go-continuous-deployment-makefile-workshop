@@ -55,11 +55,9 @@
     * helm workshop: https://github.com/mtumilowicz/helm-workshop
     * argocd workshop: https://github.com/mtumilowicz/argoCD-workshop
 
-## general
+## definitions
 * goal of CD?
     * a repeatable, reliable process for releasing software
-
-## definitions
 * continuous integration
     * team members integrate their work frequently
     * commits are verified by automated build and tests
