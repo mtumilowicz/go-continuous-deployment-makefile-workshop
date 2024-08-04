@@ -25,16 +25,27 @@
 
 ## preface
 * goals of this workshop
+    1. understand continuous deployment
+        * principles and practices
+        * continuous integration vs continuous delivery vs continuous deployment
+    1. understand how continuous deployment pipeline may work
+        * based on the provided script
+    1. introduction into feature flags and migrations
+        * explore zero-downtime database migrations in a Kubernetes environment
+    1. enumerate best practices
 * workshop plan
-    1. start k8s locally
-        * for example using docker desktop
-    1. run script `.run/greet`
-        * verify that it is working: http://localhost:31234/app/greeting
-            * should return `greet`
-    1. remove helm-workshop dir
-    1. run script `.run/greet2`
-        * verify that it is working: http://localhost:31234/app/greeting
-            * should return `greet2`
+    * demonstration
+        1. start k8s locally
+            * for example using docker desktop
+        1. run script `.run/greet`
+            * verify that it is working: http://localhost:31234/app/greeting
+                * should return `greet`
+        1. remove helm-workshop dir
+        1. run script `.run/greet2`
+            * verify that it is working: http://localhost:31234/app/greeting
+                * should return `greet2`
+    * implementation
+        1. add step to run tests before creating docker image
 
 ## introduction
 * may be worthwhile to take a look at
