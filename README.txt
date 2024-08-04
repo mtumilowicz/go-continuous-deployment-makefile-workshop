@@ -22,19 +22,17 @@
     * https://www.exoscale.com/syslog/kubernetes-zero-downtime-deployment/
     * https://www.exoscale.com/syslog/kubernetes-zero-downtime-with-spring-boot/
     * https://andrewlock.net/deploying-asp-net-core-applications-to-kubernetes-part-8-running-database-migrations-using-jobs-and-init-containers/
-    * https://argo-cd.readthedocs.io/en/stable/
 
 ## preface
 * goals of this workshop
-    * general understanding
 * workshop plan
     1. start k8s locally
         * for example using docker desktop
-    1. run script `run/greet`
+    1. run script `.run/greet`
         * verify that it is working: http://localhost:31234/app/greeting
             * should return `greet`
     1. remove helm-workshop dir
-    1. run script `run/greet2`
+    1. run script `.run/greet2`
         * verify that it is working: http://localhost:31234/app/greeting
             * should return `greet2`
 
@@ -43,7 +41,8 @@
     * golang workshops
         * https://github.com/mtumilowicz/go-chi-gorilla-wire-workshop
         * https://github.com/mtumilowicz/go-concurrency-goroutine-workshop
-    * helm workshops: https://github.com/mtumilowicz/helm-workshop
+    * helm workshop: https://github.com/mtumilowicz/helm-workshop
+    * argocd workshop: https://github.com/mtumilowicz/argoCD-workshop
 
 ## general
 * goal of CD?
@@ -77,12 +76,6 @@
     * during deployment, it's possible that parts of the cluster are running version 1 while other parts are running version 2
         * we have feature toggles, so we can enable the feature once everything is on version 2
             * it is just a deployment, not a release
-* DevOps
-    * development and operations engineers being responsible together
-    for the entire product lifecycle
-    * usually it is ops team renamed for devops team
-    * FinSecDevOps
-        * Finance, Security and Development
 
 ## feature flag
 * is a mechanism that allows code to be turned "on" or "off" remotely without the need for a deploy
@@ -100,6 +93,12 @@
         ```
 * also known as "feature flags", "feature switches", or "release toggles"
 * separates feature rollout from code deployment
+    * mitigates the risks associated with releasing changes
+    * testing changes on small subsets of users
+        * example: canary releases
+    * enable rapid deployment and rollbacks of new code
+        * code changes can be made to the the main trunk instead of having multiple feature branches
+            * trunk based development process
 * has a lifecycle shorter than an application lifecycle
     * most common use case: protect new functionality
     * roll-out of new functionality is complete => the feature flag should be removed
@@ -111,15 +110,8 @@
         * internal flags
             * used to enable additional debugging, tracing, and metrics at runtime
                 * too costly to run all the time
-* pros
-    * mitigates the risks associated with releasing changes
-    * testing changes on small subsets of users
-        * example: canary releases
-    * enable rapid deployment and rollbacks of new code
-        * code changes can be made to the the main trunk instead of having multiple feature branches
-            * trunk based development process
-* providers: LaunchDarkly, Unleash
 * large-scale feature flag system components
+    * providers: LaunchDarkly, Unleash
     * Feature Flag Control Service
         * centralized feature flag service that acts as the control plane
         * independent business units or product lines should potentially have their own instances
@@ -187,20 +179,27 @@
         * pros: can't afford to make chaotic changes
             * every commit goes to production
             * initially, you need to make space for your change
-* steps
-    * first commit: make space for the new feature (refactoring)
-        * doesn't introduce any changes in functionality, so it can be done safely
-        * refactoring doesn’t break anything as long as there is good test coverage
-    * second Commit: introduce the feature switch (toggle)
-    * third commit and subsequent: additional steps for the feature
-        * two approaches to handling errors
-            * avoiding errors: through thorough testing and coverage
-            * infrastructure for quickly handling errors
-                * disable the feature with a toggle, and do quick fix
+        * commiting
+            * first commit: make space for the new feature (refactoring)
+                * doesn't introduce any changes in functionality, so it can be done safely
+                * refactoring doesn’t break anything as long as there is good test coverage
+            * second commit: introduce the feature switch (toggle)
+            * third commit and subsequent: additional steps for the feature
+                * two approaches to handling errors
+                    * avoiding errors: through thorough testing and coverage
+                    * infrastructure for quickly handling errors
+                        * disable the feature with a toggle, and do quick fix
+* functional bugs
+    * user can't complete some action
+        * not serious => a matter of turn-off feature flag
+    * user can complete action wrong
+        * serious
+        * usually leads to data corruption
+        * example: something should cost 200 USD but costed 100
 
 ## db migrations
 * zero-downtime
-    * oldest ideas to achieve a zero downtime update is the Blue-Green deployment
+    * Blue-Green deployment (oldest ideas)
         * two exactly similar environments, one referenced as Green, the other as Blue
         * one of them runs the production app, while the other runs the pre-production app
         * in front of them sits a dispatcher
@@ -210,62 +209,58 @@
             * not always doable before switch => production data is constantly changing
         * maybe environments should share same database => schema changes must be compatible with the old app version
     * rolling update
-        * schema changes must be backward compatible and forward compatible
-            * deployment cannot be rolled back, since the legacy application is not able to cope with the updated schema
-            * schema change cannot obviously be both
-                * split the schema update into a series of small side-by-side compatible schema updates
-                * application needs to be updated in increments
-                    * able to cope with the current schema update and the next one
-* problem
-  * long running data migration causes liveness probe to fail what causes multiple restarts of a container and a failed
-  deployment
-  * solutions
-    1. k8s probles
-        * startupProbe
-            * prevent premature pod restarts due to long initialization processes
-                * Once the startupProbe succeeds, the readinessProbe and livenessProbe are activated
-            * used for application or its dependencies (e.g., databases, migrations) take a significant amount of time to start
-        * readinessProbe
-            * determine if the application is ready to handle traffic
-            * prevent routing traffic to pods that are still initializing or are not ready
-            * If it fails, the pod is removed from the list of active service endpoints but is not restarted.
-        * livenessProbe
-            * ensures the pod is alive and running
-            * If it fails, the pod is restarted by Kubernetes.
-    1. treat db migration as a long running process
-      * use dedicated k8s process
-    * separate db migration from service startup
-* separate schema changes from data migration and run them in individual transactions
-* make schema changes idempotent
-* make schema changes backward compatible
-  * follow up migration to clean things up
-* deployments
-    * blue-green deployment
-    * rolling update
-        * canary deploy
-* Running database migrations using jobs and init containers
-    * Init containers are a special type of container in a pod. When Kubernetes deploys a pod, it runs all the init containers first.
-    * Only once all of those containers have exited gracefully will the main containers be executed.
-    * Init containers are often used for downloading or configuring pre-requisites required by the main container.
-
-## bugs
-* functional bugs
-    * user can't complete some action
-        * not serious
-    * user can complete action wrong
-        * serious
-        * usually leads to data corruption
-        * example: something should cost 200 USD but costed 100
+        * split the schema update into a series of small side-by-side compatible schema updates
+        * application needs to be updated in increments
+            * able to cope with the current schema update and the next one
+* problem: long running data migration
+    * may cause liveness probe to fail what causes multiple restarts of a container and a failed deployment
+    * solutions
+        1. k8s probes
+            * startupProbe
+                * prevent premature pod restarts due to long initialization processes
+                    * Once the startupProbe succeeds, the readinessProbe and livenessProbe are activated
+                * used for application or its dependencies (e.g., databases, migrations) take a significant amount of time to start
+            * readinessProbe
+                * determine if the application is ready to handle traffic
+                * prevent routing traffic to pods that are still initializing or are not ready
+                * If it fails, the pod is removed from the list of active service endpoints but is not restarted.
+            * livenessProbe
+                * ensures the pod is alive and running
+                * If it fails, the pod is restarted by Kubernetes.
+        1. treat db migration as a long running process
+            * use dedicated k8s process
+                * jobs
+                * init containers
+                    * often used for downloading or configuring pre-requisites required by the main container
+                    * when Kubernetes deploys a pod, it runs all the init containers first
+                        * once all have exited gracefully => main containers be executed
+            * separate db migration from service startup
 
 
 ## script description
-
-## argoCD
-* follows the GitOps pattern of using Git repositories as the source of truth for defining the desired application state
-* is implemented as a Kubernetes controller which continuously monitors running applications and compares the current, live state against the desired target state (as specified in the Git repo)
-* Argo CD acts as the application controller that continuously checks between the Git repository and the applications for parameters defined by the cluster admin
-
-## k8s
-* Can be either Recreate or RollingUpdate. In the first case, Kubernetes will terminate all the Pods, and then proceed to start the updated ones. This is great for a development environment, but doesn’t implement zero-downtime. Alternatively, the value RollingUpdate configures Kubernetes to use the maxSurge and maxUnavailable parameter values.
-* Deploy by adding a Pod, then remove an old one
-* Deploy by removing a Pod, then add a new one
+* script purpose: simulate CI/CD pipeline to deploy by specific commit hash
+    * CI needs to retrieve current commit hash and pass it to the script
+        * problem: no single source of truth
+            * what you pass as a parameter will be deployed
+            * if you modify by hand deployment in the cluster there is no reconciliation
+        * solution: https://github.com/mtumilowicz/argoCD-workshop
+* steps
+    1. parse command-line arguments
+        * commit hash
+        * Docker image name
+        * Helm
+            * release name
+            * chart directory
+        * Git repository URL
+        * Kubernetes namespace.
+    1. validate required inputs
+        * required flags check
+    1. clone Git repository
+    1. checkout commit by provided commit hash within the cloned repository
+    1. prepare artifact with gradle
+        1. clean & build
+        1. run tests
+        1. build docker image
+            * tagged with the commit hash using Gradle
+    1. upgrade helm chart
+        * override placeholder `deployment.image.version` with just created docker image
