@@ -1,5 +1,5 @@
 # go-continuous-deployment-workshop
-
+ 
 * references
     * https://chatgpt.com
     * [Better software, faster: principles of Continuous Delivery and DevOps by Bert Jan Schrijver](https://www.youtube.com/watch?v=tcQNK4R1tfs)
