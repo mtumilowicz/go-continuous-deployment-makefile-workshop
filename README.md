@@ -1,7 +1,7 @@
-[![Build Status](https://app.travis-ci.com/mtumilowicz/go-continuous-deployment-workshop.svg?token=PwyvjePQ7aiAX51hSYLE&branch=main)](https://app.travis-ci.com/mtumilowicz/go-continuous-deployment-workshop)
+[![Build Status](https://app.travis-ci.com/mtumilowicz/go-continuous-deployment-makefile-workshop.svg?token=PwyvjePQ7aiAX51hSYLE&branch=main)](https://app.travis-ci.com/mtumilowicz/go-continuous-deployment-workshop)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-# go-continuous-deployment-workshop
+# go-continuous-deployment-makefile-workshop
  
 * references
     * https://chatgpt.com
