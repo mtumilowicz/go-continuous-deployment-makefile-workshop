@@ -8,143 +8,147 @@ import (
 )
 
 func main() {
-	// Parse command-line arguments
-	commitHash := flag.String("commit", "", "Git commit hash (required)")
-	imageName := flag.String("image-name", "", "Name of the Docker image (required)")
-	releaseName := flag.String("release-name", "", "Name of the Helm release (required)")
-	repoURL := flag.String("repo-url", "", "URL of the Git repository (required)")
-	chartDir := flag.String("chart-dir", "./helm", "Path to Helm chart directory")
-	namespace := flag.String("namespace", "default", "Kubernetes namespace")
+	// Define flags
+	action := flag.String("action", "", "Action to perform (clone, checkout, clean, test, build, upgrade)")
+	commitHash := flag.String("commit-hash", "", "Commit hash to use")
+	imageName := flag.String("image-name", "", "Name of the Docker image")
+	releaseName := flag.String("release-name", "", "Helm release name")
+	repoURL := flag.String("repo-url", "", "URL of the Git repository to clone")
+	chartDir := flag.String("chart-dir", "", "Directory of the Helm chart")
+	namespace := flag.String("namespace", "default", "Kubernetes namespace for the Helm release")
+	imageVersion := flag.String("image-version", "", "Image version for Helm release")
+
+	// Parse the flags
 	flag.Parse()
 
-	// Validate required flags
-	if *commitHash == "" {
-		fmt.Println("Commit hash is required.")
-		flag.Usage()
-		os.Exit(1)
-	}
-	if *imageName == "" {
-		fmt.Println("Image name is required.")
-		flag.Usage()
-		os.Exit(1)
-	}
-	if *releaseName == "" {
-		fmt.Println("Release name is required.")
-		flag.Usage()
-		os.Exit(1)
-	}
-	if *repoURL == "" {
-		fmt.Println("Repository url is required.")
-		flag.Usage()
+	// Validate action
+	if *action == "" {
+		fmt.Println("ACTION is required.")
 		os.Exit(1)
 	}
 
-	// Set clone directory based on image name
-	cloneDir := "./" + *imageName
+	// Get and validate clone directory based on image name
+	cloneDir := getCloneDir(*imageName)
 
-	// Clone the repository
-	fmt.Printf("Cloning repository from %s...\n", repoURL)
-	err := cloneRepository(*repoURL, cloneDir)
-	if err != nil {
-		fmt.Printf("Error cloning repository: %v\n", err)
+	// Perform the action based on parameters
+	switch *action {
+	case "clone":
+		cloneRepository(*repoURL, cloneDir)
+	case "checkout":
+		checkoutCommit(*commitHash, cloneDir)
+	case "clean":
+		cleanBuild(cloneDir)
+	case "test":
+		runTests(cloneDir)
+	case "build":
+		buildDockerImage(*imageVersion, *imageName, cloneDir)
+	case "upgrade":
+		upgradeHelmChart(*imageVersion, *releaseName, *chartDir, *namespace, cloneDir)
+	default:
+		fmt.Println("Unknown action:", *action)
 		os.Exit(1)
 	}
+}
 
-	// Checkout commit
-	fmt.Printf("Checking out commit: %s\n", *commitHash)
-	err = checkoutCommit(*commitHash, cloneDir)
-	if err != nil {
-		fmt.Printf("Error checking out commit: %v\n", err)
+// getCloneDir validates the image name and returns the clone directory.
+func getCloneDir(imageName string) string {
+	if imageName == "" {
+		fmt.Println("IMAGE_NAME is required.")
 		os.Exit(1)
 	}
-
-	// Clean build artifacts
-	fmt.Printf("Cleaning build artifacts...\n")
-	err = cleanBuild(cloneDir)
-	if err != nil {
-		fmt.Printf("Error cleaning build artifacts: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Run tests
-	fmt.Printf("Running tests...\n")
-	err = runTests(cloneDir)
-	if err != nil {
-		fmt.Printf("Error running tests: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Build Docker image using Gradle
-	fmt.Printf("Building Docker image with tag: %s\n", *commitHash)
-	err = buildDockerImage(*commitHash, *imageName, cloneDir)
-	if err != nil {
-		fmt.Printf("Error building Docker image: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Upgrade Helm chart
-	fmt.Printf("Upgrading Helm chart with image tag: %s\n", *commitHash)
-	err = upgradeHelmChart(*commitHash, *chartDir, *namespace, *releaseName, cloneDir)
-	if err != nil {
-		fmt.Printf("Error upgrading Helm chart: %v\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println("Deployment successful.")
+	return "./" + imageName
 }
 
 // cloneRepository clones the Git repository to the specified directory.
-func cloneRepository(repoURL, cloneDir string) error {
+func cloneRepository(repoURL, cloneDir string) {
+	if repoURL == "" {
+		fmt.Println("REPO_URL is required for clone action.")
+		os.Exit(1)
+	}
 	cmd := exec.Command("git", "clone", repoURL, cloneDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error cloning repository: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Repository cloned successfully.")
 }
 
 // checkoutCommit checks out the specified commit hash in the working directory.
-func checkoutCommit(commitHash, cloneDir string) error {
+func checkoutCommit(commitHash, cloneDir string) {
+	if commitHash == "" {
+		fmt.Println("COMMIT_HASH is required for checkout action.")
+		os.Exit(1)
+	}
 	cmd := exec.Command("git", "checkout", commitHash)
 	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-// runTests runs the tests using Gradle in the working directory.
-func runTests(cloneDir string) error {
-	cmd := exec.Command("./gradlew", "test")
-	cmd.Dir = cloneDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error checking out commit: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Checked out commit successfully.")
 }
 
 // cleanBuild removes build artifacts from the working directory.
-func cleanBuild(cloneDir string) error {
+func cleanBuild(cloneDir string) {
 	cmd := exec.Command("./gradlew", "clean")
 	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error cleaning build artifacts: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Build artifacts cleaned successfully.")
+}
+
+// runTests runs the tests using Gradle in the working directory.
+func runTests(cloneDir string) {
+	cmd := exec.Command("./gradlew", "test")
+	cmd.Dir = cloneDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error running tests: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Tests ran successfully.")
 }
 
 // buildDockerImage builds the Docker image using Gradle with the given commit hash as the tag.
-func buildDockerImage(commitHash, imageName, cloneDir string) error {
-	// Format the image tag
+func buildDockerImage(commitHash, imageName, cloneDir string) {
+	if commitHash == "" {
+		fmt.Println("COMMIT_HASH is required for build action.")
+		os.Exit(1)
+	}
 	tag := fmt.Sprintf("%s:%s", imageName, commitHash)
-	// Run Gradle with the image name and tag
 	cmd := exec.Command("./gradlew", "bootBuildImage", "--imageName="+tag)
 	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error building Docker image: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Docker image built successfully.")
 }
 
 // upgradeHelmChart upgrades the Helm chart with the given image tag, chart directory, and release name.
-func upgradeHelmChart(commitHash, chartDir, namespace, releaseName, cloneDir string) error {
-	cmd := exec.Command("helm", "upgrade", "--install", releaseName, chartDir, "--set", fmt.Sprintf("deployment.image.version=%s", commitHash), "--namespace", namespace)
+func upgradeHelmChart(imageVersion, releaseName, chartDir, namespace, cloneDir string) {
+	if imageVersion == "" || releaseName == "" || chartDir == "" {
+		fmt.Println("IMAGE_VERSION, RELEASE_NAME, and CHART_DIR are required for upgrade action.")
+		os.Exit(1)
+	}
+	cmd := exec.Command("helm", "upgrade", "--install", releaseName, chartDir, "--set", fmt.Sprintf("deployment.image.version=%s", imageVersion), "--namespace", namespace)
 	cmd.Dir = cloneDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error upgrading Helm chart: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Helm chart upgraded successfully.")
 }

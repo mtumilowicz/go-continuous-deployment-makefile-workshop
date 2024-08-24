@@ -40,13 +40,17 @@
     * demonstration
         1. start k8s locally
             * for example using docker desktop
-        1. run script `.run/greet`
-            * verify that it is working: http://localhost:31234/app/greeting
-                * should return `greet`
+        1. execute makefile step by step
+        1. port forward greeting app
+            * k9s -> :namespaces -> default -> /pods -> shift-f -> 8080
+        1. verify that it is working: http://localhost:8080/app/greeting
+            * should return `greet`
         1. remove helm-workshop dir
-        1. run script `.run/greet2`
-            * verify that it is working: http://localhost:31234/app/greeting
-                * should return `greet2`
+        1. execute makefile step by step
+        1. port forward greeting app
+            * k9s -> :namespaces -> default -> /pods -> shift-f -> 8080
+        1. verify that it is working: http://localhost:8080/app/greeting
+            * should return `greet2`
     * implementation
         1. add step to run tests before creating docker image
 
