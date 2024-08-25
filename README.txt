@@ -25,6 +25,12 @@
     * https://www.exoscale.com/syslog/kubernetes-zero-downtime-deployment/
     * https://www.exoscale.com/syslog/kubernetes-zero-downtime-with-spring-boot/
     * https://andrewlock.net/deploying-asp-net-core-applications-to-kubernetes-part-8-running-database-migrations-using-jobs-and-init-containers/
+    * https://tutorialedge.net/golang/makefiles-for-go-developers/
+    * https://earthly.dev/blog/golang-makefile/
+    * https://www.alexedwards.net/blog/a-time-saving-makefile-for-your-go-projects
+    * https://www.reddit.com/r/golang/comments/kgkmgp/how_to_use_makefiles_for_your_golang_development/
+    * https://news.ycombinator.com/item?id=21735176
+    * https://medium.com/@chaewonkong/simplifying-your-build-process-with-makefiles-in-golang-projects-b125af7a10c4
 
 ## preface
 * goals of this workshop
@@ -33,6 +39,7 @@
         * continuous integration vs continuous delivery vs continuous deployment
     1. understand how continuous deployment pipeline may work
         * based on the provided script
+    1. able to demonstrate how makefile facilitates golang projects
     1. introduction into feature flags and migrations
         * explore zero-downtime database migrations in a Kubernetes environment
     1. enumerate best practices
@@ -93,6 +100,162 @@
         * we have feature toggles, so we can enable the feature once everything is on version 2
             * it is just a deployment, not a release
 
+## makefile
+* example
+    * `main.go`
+        ```
+        package main
+
+        import "fmt"
+
+        func main() {
+            fmt.Println("Hello")
+        }
+        ```
+    * Makefile
+        ```
+        build:
+        	go build -o bin/main main.go
+
+        run:
+        	go run main.go
+        ```
+    * execution
+        1. `make build`
+            * creates binary
+        1. `make run`
+            * outputs `Hello`
+* serves two purposes
+    * automate common admin tasks
+        * streamlines development and automates repetitive tasks with a single command
+        * example: running tests, checking for vulnerabilities, pushing changes to a remote repository, and deploying to production
+    * provide short aliases for Go commands that are long or difficult to remember
+        * example: make commands for running tests with different build tags
+            * no one has to remember the go test commands
+* introduces a topological sort to build steps
+    * allows build steps to run in parallel
+    * guarantees order by dependency
+    * reason why it is used instead of build shell scripts
+* used to run and build most programming languages
+    * support incremental builds
+        * files that have changed since the last build are compiled
+        * significantly reduces build times, especially for large projects
+* reduces project build-related errors that can arise with inconsistent manual commands
+* typically Makefiles are at the root directory
+* `make` uses the Makefile as its source of commands to execute
+* commands are defined as a rules in the Makefile
+    * single rule defines target, dependencies, and the recipe of the Makefile
+        * target
+            * example: `build`, `run`, `build_and_clean`
+            * main component of a Makefile
+            * `make` command executes the recipe by its target name
+            * is interface to the commands
+        * dependencies
+            * example: `build_and_clean` has two dependencies: `build` and `run`
+            * target can have dependencies that need to be executed before running the target
+        * recipes
+            * are the actual commands that will be executed
+            * can be a single command or a collection of commands
+* variables
+    * example
+        ```
+        BINARY_NAME=hello-world
+
+        run:
+         ./${BINARY_NAME}
+        ```
+    * useful when you want the same configs or outputs to be used for different targets
+    * can be substituted by enclosing it ${<variable_name>}
+    * can be defined either by using `=` or `:=`
+        * `=` will recursively expand the variable
+            * replace the value at the point when it is substituted
+            * example
+                ```
+                x = foo
+                y = $(x) bar
+                x = later
+
+                all:
+                 echo $(y) // prints "later bar"
+                ```
+        * `:=` will expanded variable at the first scan
+            * simple expanded variables
+            * example
+                ```
+                x := foo
+                y := $(x) bar
+                x := later
+
+                all:
+                 echo $(y)
+                ```
+* use cases
+    * cross-compile to support every OS and every architecture
+        * problem: Golang supports multi-platform builds, needs multiple commands to build the binaries for different platforms
+            * example: `GOARCH=amd64 GOOS=darwin go build -o hello-world main.go`
+            * didn’t want to manually set the GOOS and GOARCH variables for every command
+        * solution
+            ```
+            Makefile
+
+            compile:
+                GOOS=linux GOARCH=386 go build -o bin/main-linux-386 main.go
+                GOOS=windows GOARCH=386 go build -o bin/main-windows-386 main.go
+                ...
+            ```
+    * layering commands
+        * problem: combining commands
+        * solution
+            ```
+            hello:
+            	echo "Hello"
+
+            build:
+            	go build -o bin/main main.go
+
+            all: hello build
+            ```
+    * entrypoint for builds in polyglot environment
+        * problem: sometimes it gets confusing to figure out how to build a project
+        * solution: standardizing on running `make`
+            * example:
+    * standardize ci/cd pipelines
+        * example
+            ```
+            # .gitlab-ci.yml
+
+            stages:
+              - build
+              - test
+              - deploy
+
+            variables:
+              TARGET: "my_program"
+
+            build:
+              stage: build
+              script:
+                - make build
+              artifacts:
+                paths:
+                  - $TARGET
+
+            test:
+              stage: test
+              script:
+                - make test
+
+            deploy:
+              stage: deploy
+              script:
+                - make deploy
+              only:
+                - main
+            ```
+* tips
+    * to disable printing the recipe while running the target command, use `@` before the recipe
+    * you should label each of your tasks that aren't a file with .PHONY
+    * other similar tool: https://github.com/go-task
 ## feature flag
 * is a mechanism that allows code to be turned "on" or "off" remotely without the need for a deploy
     * during runtime, your system will query an outside data source or a service to read the configuration
