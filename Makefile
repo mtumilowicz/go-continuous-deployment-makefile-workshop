@@ -11,7 +11,7 @@ NAMESPACE ?= default
 
 # Build the Go binary
 build:
-	go build -o deployer main.go
+	go build -o bin/deployer main.go
 
 # Target: clone repository
 clone: build
