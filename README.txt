@@ -31,6 +31,7 @@
     * https://www.reddit.com/r/golang/comments/kgkmgp/how_to_use_makefiles_for_your_golang_development/
     * https://news.ycombinator.com/item?id=21735176
     * https://medium.com/@chaewonkong/simplifying-your-build-process-with-makefiles-in-golang-projects-b125af7a10c4
+    * https://dzone.com/articles/what-i-have-understood-about-devops-as-an-engineer
 
 ## preface
 * goals of this workshop
@@ -99,7 +100,39 @@
     * during deployment, it's possible that parts of the cluster are running version 1 while other parts are running version 2
         * we have feature toggles, so we can enable the feature once everything is on version 2
             * it is just a deployment, not a release
-
+* devops
+    * historical context
+        * software teams were usually comprised of development teams (who write code) and operation teams (who deploy & maintain applications)
+            * both responsible for software release
+        * software releases used to be less frequent
+            * rare to saw more than one release per month
+            * systems were not designed to change fast after deployment
+        * infrastructure was not as readily accessible as it is now
+            * operation team was responsible for static capacity planning, provisioning, and maintenance of the same
+        * development and operations have contradictory goals
+            * development team
+                * incentive: develop new features faster
+            * operations team
+                * incentive: ensure stability of application running in production (time-consuming activity)
+            * introduced friction & slows down the entire release process
+                * priority is given to completing their incentive, and the rest is not their problem
+                    * this stretches the release period from days to weeks to months
+                * development team
+                    * deployment guide is not well documented
+                    * doesn’t consider where the app is getting deployed
+                * operations
+                    * don’t know how the app works
+                    * if something fails, need the help of a developer to figure it out
+    * definitions
+        * intersection between development and operations
+        * is the combination of cultural philosophies, practices, and tools that increases an organization’s ability to deliver applications and services at high velocity
+        * in short: take a process that is being done manually and automate it
+    * objective: deliver high-quality software faster
+        * by removing the roadblocks by introducing automation and streamlining the software delivery process
+    * goals
+        * identify such roadblocks in the software development lifecycle and try to overcome them by introducing some kind of automation
+            * could be via tools and scripts or processes and practices
+        *
 ## makefile
 * example
     * `main.go`
