@@ -32,6 +32,7 @@
     * https://news.ycombinator.com/item?id=21735176
     * https://medium.com/@chaewonkong/simplifying-your-build-process-with-makefiles-in-golang-projects-b125af7a10c4
     * https://dzone.com/articles/what-i-have-understood-about-devops-as-an-engineer
+    * [Devoxx Greece 2024 - Kubernetes Resiliency by Chris Ayers](https://www.youtube.com/watch?v=R4u5bvWceBQ)
 
 ## preface
 * goals of this workshop
@@ -430,15 +431,18 @@
         1. k8s probes
             * startupProbe
                 * prevent premature pod restarts due to long initialization processes
-                    * Once the startupProbe succeeds, the readinessProbe and livenessProbe are activated
-                * used for application or its dependencies (e.g., databases, migrations) take a significant amount of time to start
+                    * postpones liveness/readiness probes until success
+                * used for apps with complex initializations or large data loads
+                    * example: migrations 
             * readinessProbe
                 * determine if the application is ready to handle traffic
                 * prevent routing traffic to pods that are still initializing or are not ready
-                * If it fails, the pod is removed from the list of active service endpoints but is not restarted.
+                * blocks traffic on failure
+                    * pod is not restarted
+                        * is removed from the list of active service endpoints
             * livenessProbe
                 * ensures the pod is alive and running
-                * If it fails, the pod is restarted by Kubernetes.
+                * restarts on failure
         1. treat db migration as a long running process
             * use dedicated k8s process
                 * jobs
